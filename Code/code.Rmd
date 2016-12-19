@@ -1,0 +1,234 @@
+---
+title: "Data Wrangling Project"
+author: "Jyoti Chaudhary"
+date: "December 6, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(rvest)
+library(plyr)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(broom)
+library(readxl)
+library(ggplot2)
+library(faraway)
+library(choroplethrMaps)
+library(choroplethr)
+library(RColorBrewer)
+```
+
+Load excel data sheet "National_salary.xlsx" into R. This data sheet has US National salary data for all major occupations. The code extracts the salary details of major occupations and will plot a density graph with Annual Mean Salary plotted on X axis and Employment count for each occupation plotted on Y axis.
+
+
+```{r message=FALSE, warning=FALSE}
+nat_salary <- read_excel("National_salary.xlsx", na="", col_names = TRUE, col_types = NULL)
+
+colnames(nat_salary) <- c("Code", "Job.title", "Group", "Emp.count", "Emp.PRSE", "Mean.hourly.wage", "Mean.annual.wage", "Mean.PRSE", "H.PCT10", "H.PCT25", "Median.hourly.wage", "H.PCT75", "H.PCT90", "A.PCT10", "A.PCT25", "Annual.median.wage", "A.PCT75", "A.PCT90", "Annual", "Hourly")
+
+## Change numberic fields from 'character' class to 'numeric' class ##################
+
+nat_salary$Mean.hourly.wage <- fround(as.numeric(nat_salary$Mean.hourly.wage), 2)
+nat_salary$Median.hourly.wage <- fround(as.numeric(nat_salary$Median.hourly.wage), 2)
+nat_salary$H.PCT10 <- fround(as.numeric(nat_salary$H.PCT10), 2)
+nat_salary$H.PCT25 <- fround(as.numeric(nat_salary$H.PCT25), 2)
+nat_salary$H.PCT75 <- fround(as.numeric(nat_salary$H.PCT75), 2)
+nat_salary$H.PCT90 <- fround(as.numeric(nat_salary$H.PCT90), 2)
+nat_salary$A.PCT10 <- fround(as.numeric(nat_salary$A.PCT10), 2)
+nat_salary$A.PCT25 <- fround(as.numeric(nat_salary$A.PCT25), 2)
+nat_salary$A.PCT75 <- fround(as.numeric(nat_salary$A.PCT75), 2)
+nat_salary$A.PCT90 <- fround(as.numeric(nat_salary$A.PCT90), 2)
+nat_salary <- nat_salary %>% mutate(code2 = substr(nat_salary$Code, 1, 2), major = "")
+
+nat_salary$major <- ifelse(nat_salary$code2 == "11", c("Management"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "13", c("Business and Financial Operations"), nat_salary$major)  
+nat_salary$major <- ifelse(nat_salary$code2 == "15", c("Computer and Mathematical"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "17", c("Architecture and Engineering Occupations"), nat_salary$major)  
+nat_salary$major <- ifelse(nat_salary$code2 == "19", c("Life, Physical, and Social Science"), nat_salary$major)  
+nat_salary$major <- ifelse(nat_salary$code2 == "21", c("Community and Social Service"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "23", c("Legal"), nat_salary$major)
+
+nat_salary$major <- ifelse(nat_salary$code2 == "25", c("Education, Training, and Library"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "27", c("Arts, Design, Entertainment, Sports, and Media"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "29", c("Healthcare Practitioners"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "31", c("Healthcare Support"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "33", c("Protective Service"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "35", c("Food Preparation and Serving"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "37", c("Building and Grounds Cleaning and Maintenance"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "39", c("Personal Care and Service"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "41", c("Sales and Related"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "43", c("Office and Administrative Support"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "45", c("Farming, Fishing, and Forestry"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "47", c("Construction and Extraction"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "49", c("Installation, Maintenance, and Repair"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "51", c("Production"), nat_salary$major)
+nat_salary$major <- ifelse(nat_salary$code2 == "53", c("Transportation and Material Moving"), nat_salary$major)
+
+salary1 <- select(nat_salary, Code, Job.title, Group, Emp.count, Mean.hourly.wage, Mean.annual.wage, Median.hourly.wage, Annual.median.wage)
+
+salary_major <- salary1 %>% filter(Group=="major") 
+
+salary_major_detail <- nat_salary %>% filter(Group=="major" | Group=="detailed") %>% select(Code, code2, Job.title, major, Group, Emp.count, Mean.hourly.wage, Mean.annual.wage, Median.hourly.wage, Annual.median.wage) 
+
+```
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+salary_major_detail %>% filter(Group != 'major') %>%
+  ggplot(aes(x = Mean.annual.wage)) +
+ geom_density(aes(fill = major), alpha = 0.6) +
+  facet_wrap(~major, scales="free_y")
+```
+
+SALARY OF TOP 10 PAYING OCCUPATIONS
+
+```{r message=FALSE, warning=FALSE}
+top10_salary1 <- nat_salary %>%
+  filter(Group=="detailed") %>%
+  arrange(desc(Mean.annual.wage))%>%
+  head(10) %>%
+  select(Job.title, Mean.annual.wage, A.PCT10, A.PCT25, Annual.median.wage, A.PCT75, A.PCT90) 
+
+top10_salary <- select(top10_salary1, Job.title, Mean.annual.wage)
+
+head(top10_salary)
+
+
+```
+
+SALARY OF LOWEST 10 PAYING OCCUPATIONS
+
+```{r message=FALSE, warning=FALSE}
+low10_salary1 <- nat_salary %>%
+  filter(Group=="detailed" & Mean.annual.wage != "NA") %>%
+  arrange(desc(Mean.annual.wage))%>%
+  tail(10) %>%
+  select(Job.title, Mean.annual.wage, A.PCT10, A.PCT25, Annual.median.wage, A.PCT75, A.PCT90)  
+
+low10_salary <- select(low10_salary1, Job.title, Mean.annual.wage)
+
+low10_salary$Job.title <- substr(low10_salary$Job.title, 1, 25)
+  
+head(low10_salary)
+
+```
+
+
+BOXPLOT FOR SALARY RANGE OF TOP PAYING OCCUPATIONS:  Anesthesiologists, Chief Executives and Family and General Practitioners
+
+```{r message=FALSE, warning=FALSE}
+
+top10_salary1 <- filter(top10_salary1, Job.title == "Anesthesiologists" | Job.title == "Family and General Practitioners" | Job.title =="Chief Executives")
+  
+top_low_salary <- rbind(top10_salary1, low10_salary1)
+
+top_low_salary$A.PCT10 <- as.numeric(top_low_salary$A.PCT10)
+top_low_salary$A.PCT25 <- as.numeric(top_low_salary$A.PCT25)
+top_low_salary$A.PCT75 <- as.numeric(top_low_salary$A.PCT75)
+top_low_salary$A.PCT90 <- as.numeric(top_low_salary$A.PCT90)
+
+top_low_salary$Job.title <- substr(top_low_salary$Job.title, 1, 15)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+
+ggplot(top_low_salary[1:3,], aes(Job.title)) +
+  geom_boxplot(fill="lightblue",
+    aes(ymin = A.PCT10, lower = A.PCT25, middle = Annual.median.wage, upper = A.PCT75, ymax = A.PCT90),
+    stat = "identity") + theme_light(base_size=16) + ylab("Annual Salary ($)") + xlab("Job Title")
+
+```
+
+BOXPLOT FOR SALARY RANGE OF LOWEST PAYING OCCUPATIONS
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+
+ggplot(top_low_salary[4:7,], aes(Job.title)) +
+  geom_boxplot(fill="lightblue",
+    aes(ymin = A.PCT10, lower = A.PCT25, middle = Annual.median.wage, upper = A.PCT75, ymax = A.PCT90),
+    stat = "identity"
+  ) + theme_light(base_size=16) + ylab("Annual Salary ($)") + xlab("Job Title") 
+
+```
+
+
+Load excel data sheet "state_May2015_dl.xlsx" into R. This data sheet has US income wage data, by State, for all major occupations. The code extracts the salary details of major occupations and will plot a Horizontal Bar graph for total employment count by state. 
+
+```{r message=FALSE, warning=FALSE}
+
+state_salary <- read_excel("state_May2015_dl.xlsx", na="", col_names = TRUE, col_types = NULL)
+
+
+state_salary1 <- select(state_salary, ST, STATE, OCC_CODE,  OCC_TITLE, OCC_GROUP, TOT_EMP, LOC_Q, H_MEAN, A_MEAN, H_MEDIAN, A_MEDIAN)
+
+colnames(state_salary1) <- c("ST.code", "State", "OCC.Code",  "Job.title", "Group", "Emp.count", "LOC.Q", "H.mean.wage", "A.mean.wage", "H.median.wage", "A.median.wage")
+
+
+state_salary1$LOC.Q <- fround(as.numeric(state_salary1$LOC.Q), 2)
+state_salary1$H.mean.wage <- fround(as.numeric(state_salary1$H.mean.wage), 2)
+state_salary1$A.mean.wage <- fround(as.numeric(state_salary1$A.mean.wage), 2)
+state_salary1$H.median.wage <- fround(as.numeric(state_salary1$H.median.wage), 2)
+state_salary1$A.median.wage <- fround(as.numeric(state_salary1$A.median.wage), 2)
+
+state_salary1 <- state_salary1 %>% mutate(code2 = substr(state_salary1$OCC.Code, 1, 2), major = "")
+
+state_salary_major <- state_salary1 %>% filter(Group=="major") 
+
+
+state_salary1$major <- ifelse(state_salary1$code2 == "11", c("Management"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "13", c("Business and Financial Operations"), state_salary1$major)  
+state_salary1$major <- ifelse(state_salary1$code2 == "15", c("Computer and Mathematical"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "17", c("Architecture and Engineering Occupations"), state_salary1$major)  
+state_salary1$major <- ifelse(state_salary1$code2 == "19", c("Life, Physical, and Social Science"), state_salary1$major)  
+state_salary1$major <- ifelse(state_salary1$code2 == "21", c("Community and Social Service"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "23", c("Legal"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "25", c("Education, Training, and Library"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "27", c("Arts, Design, Entertainment, Sports, and Media"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "29", c("Healthcare Practitioners"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "31", c("Healthcare Support"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "33", c("Protective Service"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "35", c("Food Preparation and Serving"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "37", c("Building and Grounds Cleaning and Maintenance"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "39", c("Personal Care and Service"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "41", c("Sales and Related"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "43", c("Office and Administrative Support"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "45", c("Farming, Fishing, and Forestry"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "47", c("Construction and Extraction"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "49", c("Installation, Maintenance, and Repair"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "51", c("Production"), state_salary1$major)
+state_salary1$major <- ifelse(state_salary1$code2 == "53", c("Transportation and Material Moving"), state_salary1$major)
+
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+
+## Bar plot to show total employment count
+state_salary2 <- state_salary1 %>% filter(Group=='total')
+
+ggplot(state_salary2, aes(State, Emp.count)) + geom_bar(aes(fill=Emp.count), stat = "identity", width = 0.6, fill = "lightgreen") + geom_text(label = state_salary2$Emp.count) + coord_flip() + ggtitle("Total Employment count (Numbers)" ) + xlab(NULL) + ylab(NULL) 
+
+```
+
+Choropleth for US Annual Mean Salary, 2015, by STATE
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+# removed 3 states as they are not mapped in choropleth
+State_salary_choro <- state_salary2 %>% filter(State != "Guam" & State != "Puerto Rico" & State != "Virgin Islands") %>% select(State, A.mean.wage)
+
+State_salary_choro$A.mean.wage <- as.numeric(State_salary_choro$A.mean.wage)
+colnames(State_salary_choro) <- c("region", "value")
+State_salary_choro$region <- str_to_lower(State_salary_choro$region)
+state_choropleth(State_salary_choro, 
+                 title  = "United States - Annual Mean Salary, 2015 by State", 
+                 legend = "USD", num_colors = 1)
+
+```
+
+
+
