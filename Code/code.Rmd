@@ -25,7 +25,7 @@ library(RColorBrewer)
 Load excel data sheet "National_salary.xlsx" into R. This data sheet has US National salary data for all major occupations. The code extracts the salary details of major occupations and will plot a density graph with Annual Mean Salary plotted on X axis and Employment count for each occupation plotted on Y axis.
 
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, echo=TRUE}
 nat_salary <- read_excel("National_salary.xlsx", na="", col_names = TRUE, col_types = NULL)
 
 colnames(nat_salary) <- c("Code", "Job.title", "Group", "Emp.count", "Emp.PRSE", "Mean.hourly.wage", "Mean.annual.wage", "Mean.PRSE", "H.PCT10", "H.PCT25", "Median.hourly.wage", "H.PCT75", "H.PCT90", "A.PCT10", "A.PCT25", "Annual.median.wage", "A.PCT75", "A.PCT90", "Annual", "Hourly")
@@ -68,6 +68,12 @@ nat_salary$major <- ifelse(nat_salary$code2 == "49", c("Installation, Maintenanc
 nat_salary$major <- ifelse(nat_salary$code2 == "51", c("Production"), nat_salary$major)
 nat_salary$major <- ifelse(nat_salary$code2 == "53", c("Transportation and Material Moving"), nat_salary$major)
 
+
+```
+
+
+```{r message=FALSE, warning=FALSE}
+
 salary1 <- select(nat_salary, Code, Job.title, Group, Emp.count, Mean.hourly.wage, Mean.annual.wage, Median.hourly.wage, Annual.median.wage)
 
 salary_major <- salary1 %>% filter(Group=="major") 
@@ -76,12 +82,11 @@ salary_major_detail <- nat_salary %>% filter(Group=="major" | Group=="detailed")
 
 ```
 
-
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 salary_major_detail %>% filter(Group != 'major') %>%
   ggplot(aes(x = Mean.annual.wage)) +
  geom_density(aes(fill = major), alpha = 0.6) +
-  facet_wrap(~major, scales="free_y")
+  facet_wrap(~major, scales="free_y") + theme(legend.position="none")
 ```
 
 SALARY OF TOP 10 PAYING OCCUPATIONS
