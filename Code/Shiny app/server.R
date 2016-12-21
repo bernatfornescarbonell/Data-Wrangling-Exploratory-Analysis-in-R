@@ -15,7 +15,6 @@ library(choroplethrMaps)
 library(shiny)
 library(plyr)
 library(faraway)
-source("helpers.R")
 
 state_salary <- read_excel("state_May2015_dl.xlsx", na="", col_names = TRUE, col_types = NULL)
 

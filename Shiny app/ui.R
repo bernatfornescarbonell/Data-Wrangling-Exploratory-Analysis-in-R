@@ -1,5 +1,6 @@
 library(shiny)
 library(tidyverse)
+library(plyr)
 library(dplyr)
 library(tidyr)
 library(rvest)
@@ -13,7 +14,6 @@ library(viridis)
 library(choroplethr)
 library(choroplethrMaps)
 library(shiny)
-library(plyr)
 library(faraway)
 
 # Define UI for application that draws a histogram

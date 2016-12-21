@@ -1,5 +1,6 @@
 library(shiny)
 library(tidyverse)
+library(plyr)
 library(dplyr)
 library(tidyr)
 library(rvest)
@@ -13,7 +14,6 @@ library(viridis)
 library(choroplethr)
 library(choroplethrMaps)
 library(shiny)
-library(plyr)
 library(faraway)
 
 state_salary <- read_excel("state_May2015_dl.xlsx", na="", col_names = TRUE, col_types = NULL)
@@ -77,7 +77,7 @@ shinyServer(function(input, output, session) {
    hist_title <- reactive({
     switch(input$var2,
           "Annual Wage" = "Total Employment count (Numbers), by State & Occupation",
-          "Location Quotient" =  "Mean Annual Wage (USD), by State & Occupation")
+          "Location Quotient" =  "Total Employment count (Numbers), by State & Occupation")
   
   })
   
