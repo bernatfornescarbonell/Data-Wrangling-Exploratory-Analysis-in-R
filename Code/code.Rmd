@@ -216,7 +216,7 @@ state_salary1$major <- ifelse(state_salary1$code2 == "53", c("Transportation and
 ## Bar plot to show total employment count
 state_salary2 <- state_salary1 %>% filter(Group=='total')
 
-ggplot(state_salary2, aes(State, Emp.count)) + geom_bar(aes(fill=Emp.count), stat = "identity", width = 0.6, fill = "lightgreen") + geom_text(label = state_salary2$Emp.count) + coord_flip() + ggtitle("Total Employment count (Numbers)" ) + xlab(NULL) + ylab(NULL) 
+ggplot(state_salary2, aes(State, Emp.count)) + geom_bar(aes(fill=Emp.count), stat = "identity", width = 0.6, fill = "lightgreen") + geom_text(label = state_salary2$Emp.count) + coord_flip() + ggtitle("Total Employment count (Numbers)" ) + xlab(NULL) + ylab(NULL) + theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
 
 ```
 
