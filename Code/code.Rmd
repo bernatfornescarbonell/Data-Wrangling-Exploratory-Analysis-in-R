@@ -236,4 +236,111 @@ state_choropleth(State_salary_choro,
 ```
 
 
+Load excel data sheet "US_Crime_2015" into R. This data sheet has US Crime data for various crime categories. The code converts the data into tall format using 'GATHER' command and plots a bar graph with States plotted on X axis and crime incident count for each crime category plotted on Y axis.
 
+
+```{r message=FALSE, warning=FALSE}
+
+## load and clean Crime data file
+crime_file <- read_excel("US_Crime_2015.xls", skip=3, na="", col_names = TRUE, col_types = NULL)
+
+## Add 'Area' value to each row
+
+prevarea <- crime_file$Area    #Moved Area column data into a character vector
+
+
+for(i in 2:nrow(crime_file))  # FOR loop to fill Area column value correctly whereever its blank or NA in the dataset
+{ 
+  if (is.na(prevarea[i])) {
+    prevarea[i] <- prevarea[i-1]  # when area value blank, fill it from previous row area value
+  } 
+}
+
+Crime_file1 <- data.frame(prevarea, crime_file)   
+
+Crime_file1 <- Crime_file1 %>% filter(Crime_file1$Year == "2015.000000")  # select rows only for  2015
+
+
+colnames(Crime_file1) <- c("State", "area", "year", "population", "violent.crime", "violent.crime.rate", "murder", "murder.rate", "rape", "rape.rate", "rape.legacy", "rape.legacy.rate", "robbery", "robbery.rate", "assault", "assault.rate", "property.crime", "property.crime.rate", "burglary", "burglary.rate", "larceny.theft", "larceny.theft.rate", "vehicle.theft", "vehicle.theft.rate","a","b")
+
+Crime_file1$State <- tolower(Crime_file1$State) 
+
+state_list <- data.frame(state_salary2$ST.code, state_salary2$State)  # Use state_salary2 dataframe to build state_list dataframe that will have 2 columns , state name and state code. 
+
+colnames(state_list) <- c("state.code", "state")
+state_list$state <- str_trim(tolower(state_list$state))  
+
+
+Crime_file1$State <- str_trim(gsub(",","",str_trim(str_replace_all(Crime_file1$State,"[0-9]+",""))))    #clean Crime_file1 column to remove numeric digits from state name  
+
+
+crime_file3 <- left_join(Crime_file1, state_list, by=c("State" = "state"))  # join crime table and state list table on state name
+
+crime_file4 <- crime_file3 %>% filter(!is.na(state.code))    # select rows that have valid value for state code
+crime_file4$State <- str_trim(crime_file4$State)
+crime_file4$year <- fround(as.numeric(crime_file4$year), 0)   # remove decimals/zeros from column Year
+crime_file4$population <- as.numeric(fround(as.numeric(crime_file4$population), 0)) # remove decimals/zeros from column population
+crime_file4$violent.crime <- as.numeric(fround(as.numeric(crime_file4$violent.crime), 2))
+crime_file4$violent.crime.rate <- as.numeric(fround(as.numeric(crime_file4$violent.crime.rate), 2))
+crime_file4$murder <- as.numeric(fround(as.numeric(crime_file4$murder), 2))
+crime_file4$murder.rate <- as.numeric(fround(as.numeric(crime_file4$murder.rate), 2))
+crime_file4$rape <- as.numeric(fround(as.numeric(crime_file4$rape), 2))
+crime_file4$rape.rate <- as.numeric(fround(as.numeric(crime_file4$rape.rate), 2))
+crime_file4$rape.legacy <- as.numeric(fround(as.numeric(crime_file4$rape.legacy), 2))
+crime_file4$rape.legacy.rate <- as.numeric(fround(as.numeric(crime_file4$rape.legacy.rate), 2))
+crime_file4$robbery <- as.numeric(fround(as.numeric(crime_file4$robbery), 2))
+crime_file4$robbery.rate <- as.numeric(fround(as.numeric(crime_file4$robbery.rate), 2))
+crime_file4$assault <- as.numeric(fround(as.numeric(crime_file4$assault), 2))
+crime_file4$assault.rate <- as.numeric(fround(as.numeric(crime_file4$assault.rate), 2))
+crime_file4$property.crime <- as.numeric(fround(as.numeric(crime_file4$property.crime), 2))
+crime_file4$property.crime.rate <- as.numeric(fround(as.numeric(crime_file4$property.crime.rate), 2))
+crime_file4$burglary <- as.numeric(fround(as.numeric(crime_file4$burglary), 2))
+crime_file4$burglary.rate <- as.numeric(fround(as.numeric(crime_file4$burglary.rate), 2))
+crime_file4$larceny.theft <- as.numeric(fround(as.numeric(crime_file4$larceny.theft), 2))
+crime_file4$larceny.theft.rate <- as.numeric(fround(as.numeric(crime_file4$larceny.theft.rate), 2))
+crime_file4$vehicle.theft <- as.numeric(fround(as.numeric(crime_file4$vehicle.theft), 2))
+crime_file4$vehicle.theft.rate <- as.numeric(fround(as.numeric(crime_file4$vehicle.theft.rate), 2))
+
+
+### Crime data cleaning end ##########
+
+crime_file5 <- crime_file4 %>% select(state.code, violent.crime, murder, rape, robbery, assault, property.crime, burglary, larceny.theft, vehicle.theft)
+
+crime_file6 <- crime_file4 %>% select(state.code, violent.crime.rate, murder.rate, rape.rate, robbery.rate, assault.rate, property.crime.rate, burglary.rate, larceny.theft.rate, vehicle.theft.rate)
+
+```
+
+Converted Crime data frame into tall format using GATHER. This is needed to plot crime count by category.
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+
+tall_crime_count <- gather(crime_file5, key="crime.category", 2:10, value = "count")
+
+tall_crime_rate <- gather(crime_file6, key="crime.category", 2:10, value = "rate")
+
+
+```
+
+2015 CRIME INCIDENT COUNT PLOTTED ON Y-AXIS AND BAR IS PLOTTED FOR EACH STATE ON X-AXIS
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+
+ggplot(tall_crime_count, aes(state.code, count)) +
+  geom_bar(aes(fill = count), stat = "identity", colour="black", fill="skyblue") +
+  ylab('Crime Incident Count') + xlab(NULL) +
+  facet_wrap(~crime.category, scales='free') + theme(axis.text.x = element_text(angle=60, hjust=1))
+
+
+```
+
+2015 CRIME RATE (PER 100,000) PLOTTED ON Y-AXIS AND BAR IS PLOTTED FOR EACH STATE ON X-AXIS
+
+```{r message=FALSE, warning=FALSE, echo=TRUE}
+
+ggplot(tall_crime_rate, aes(state.code, rate)) +
+  geom_bar(aes(fill = rate), stat = "identity", colour="black", fill="skyblue") +
+  ylab('Crime Rate (per 100,000)') + xlab(NULL) +
+  facet_wrap(~crime.category, scales='free') + theme(axis.text.x = element_text(angle=60, hjust=1))
+
+
+```
